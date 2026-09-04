@@ -6,17 +6,16 @@
     <title>Catatan Keuangan Pribadi</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen p-4 sm:p-6">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen p-4 sm:p-6 pb-20">
 
     <div class="max-w-md mx-auto space-y-6">
         
         <!-- Header -->
-        <header class="text-center flex justify-between items-center">
-            <div class="text-left">
+        <header class="flex justify-between items-center">
+            <div>
                 <h1 class="text-2xl font-bold text-slate-900">Dompet Pintar 💰</h1>
                 <p class="text-xs text-slate-500">Catat pengeluaran & saldo secara praktis</p>
             </div>
-            <!-- Tombol Tambah Saldo -->
             <button onclick="openModalSaldo()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition">
                 + Tambah Saldo
             </button>
@@ -40,16 +39,11 @@
 
         <!-- Form Input Transaksi Multi-Item -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="font-semibold text-slate-700 text-sm">Catat Pengeluaran</h3>
-                <button type="button" onclick="addInputRow()" class="text-xs text-blue-600 font-semibold hover:underline">
-                    + Tambah Item
-                </button>
-            </div>
+            <h3 class="font-semibold text-slate-700 text-sm mb-3">Catat Pengeluaran</h3>
 
             <form id="transactionForm" onsubmit="submitMultiData(event)" class="space-y-3">
                 <div id="itemContainer" class="space-y-3">
-                    <!-- Row Pertama secara default -->
+                    <!-- Row Pertama -->
                     <div class="item-row bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                         <input type="text" placeholder="Deskripsi (contoh: makan beli eskrim shopee)" 
                             class="desc-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
@@ -61,6 +55,11 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tombol Tambah Item DITAROH DI BAWAH DAFTAR INPUT -->
+                <button type="button" onclick="addInputRow()" class="w-full py-2 border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-xs rounded-xl hover:bg-blue-50 transition">
+                    + Tambah Item Lagi
+                </button>
 
                 <button type="submit" id="submitBtn"
                     class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition duration-200 text-sm shadow-md mt-2">
@@ -77,6 +76,11 @@
                 <p class="text-slate-400 text-xs text-center py-4">Memuat data...</p>
             </div>
         </div>
+
+        <!-- Tombol Lihat Detail Catatan / Riwayat -->
+        <button onclick="openModalRiwayat()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-2xl font-medium text-sm shadow-md transition flex justify-center items-center gap-2">
+            📋 Lihat Detail Catatan Transaksi
+        </button>
 
     </div>
 
@@ -103,24 +107,63 @@
         </div>
     </div>
 
+    <!-- Modal Pop-up Detail Catatan / Riwayat Transaksi -->
+    <div id="modalRiwayat" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-5 max-w-lg w-full h-[85vh] flex flex-col shadow-xl">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Riwayat Semua Transaksi</h3>
+                <button onclick="closeModalRiwayat()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+            </div>
+            
+            <!-- List Riwayat Scrollable -->
+            <div id="riwayatContainer" class="flex-1 overflow-y-auto space-y-3 pr-1 text-sm">
+                <p class="text-slate-400 text-xs text-center py-4">Memuat riwayat...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pop-up Edit Transaksi -->
+    <div id="modalEdit" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-xl space-y-4">
+            <h3 class="font-bold text-slate-800 text-base">Edit Transaksi</h3>
+            <input type="hidden" id="editRowIndex">
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-slate-500">Jenis Transaksi</label>
+                    <select id="editJenis" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+                        <option value="Keluar">Keluar (Pengeluaran)</option>
+                        <option value="Masuk">Masuk (Pemasukan)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500">Deskripsi / Teks Input</label>
+                    <input type="text" id="editDesc" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500">Nominal (Rp)</label>
+                    <input type="text" id="editAmount" oninput="formatInputRibuan(this)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeModalEdit()" class="w-1/2 bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-semibold">Batal</button>
+                <button onclick="submitEditData()" id="btnEditSubmit" class="w-1/2 bg-blue-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-blue-700">Simpan Edit</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl_2jmImcasNiYhB929cgdxiCnQCL_4qJnqg5hDjSTg252Ni5KgsJj67RV2YGXe4R-/exec";
+        let globalRiwayat = [];
 
-        // Auto-Format Ribuan (Titik Separator)
         function formatInputRibuan(input) {
             let value = input.value.replace(/[^0-9]/g, '');
-            if (value) {
-                input.value = new Intl.NumberFormat('id-ID').format(value);
-            } else {
-                input.value = '';
-            }
+            input.value = value ? new Intl.NumberFormat('id-ID').format(value) : '';
         }
 
         function formatRupiah(angka) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
         }
 
-        // Ambil Data dari GAS
         async function loadData() {
             try {
                 let response = await fetch(SCRIPT_URL);
@@ -130,32 +173,74 @@
                 document.getElementById('totalMasuk').innerText = formatRupiah(data.totalMasuk);
                 document.getElementById('totalKeluar').innerText = formatRupiah(data.totalKeluar);
 
+                // Update Rekap Kategori
                 let catContainer = document.getElementById('categoryList');
                 catContainer.innerHTML = '';
-
                 let keys = Object.keys(data.rekapKategori);
                 if (keys.length === 0) {
                     catContainer.innerHTML = '<p class="text-slate-400 text-xs text-center py-2">Belum ada pengeluaran tercatat.</p>';
-                    return;
+                } else {
+                    keys.forEach(cat => {
+                        let amount = data.rekapKategori[cat];
+                        catContainer.innerHTML += `
+                            <div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-none">
+                                <span class="text-slate-600 font-medium">${cat}</span>
+                                <span class="text-slate-900 font-semibold">${formatRupiah(amount)}</span>
+                            </div>
+                        `;
+                    });
                 }
 
-                keys.forEach(cat => {
-                    let amount = data.rekapKategori[cat];
-                    let itemHTML = `
-                        <div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-none">
-                            <span class="text-slate-600 font-medium">${cat}</span>
-                            <span class="text-slate-900 font-semibold">${formatRupiah(amount)}</span>
-                        </div>
-                    `;
-                    catContainer.innerHTML += itemHTML;
-                });
+                // Simpan Riwayat Global
+                globalRiwayat = data.riwayat || [];
+                renderRiwayat();
 
             } catch (error) {
                 console.error("Gagal memuat data:", error);
             }
         }
 
-        // Tambah Baris Input Baru (Multi-Item)
+        function renderRiwayat() {
+            let container = document.getElementById('riwayatContainer');
+            container.innerHTML = '';
+
+            if (globalRiwayat.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">Belum ada catatan transaksi.</p>';
+                return;
+            }
+
+            globalRiwayat.forEach(item => {
+                let isMasuk = item.jenis === "Masuk";
+                let badgeColor = isMasuk ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700";
+                let sign = isMasuk ? "+" : "-";
+
+                container.innerHTML += `
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">${item.tanggal}</span>
+                                <span class="font-semibold text-slate-800 text-sm">${item.deskripsi}</span>
+                            </div>
+                            <span class="text-xs font-bold ${isMasuk ? 'text-emerald-600' : 'text-slate-800'}">
+                                ${sign} ${formatRupiah(item.nominal)}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60">
+                            <div class="flex gap-1.5">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badgeColor}">${item.kategori}</span>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-200 text-slate-600">${item.metode}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="openModalEdit(${item.rowIndex}, '${item.deskripsi}', ${item.nominal}, '${item.jenis}')" class="text-blue-600 hover:underline text-xs font-medium">Edit</button>
+                                <button onclick="deleteData(${item.rowIndex})" class="text-rose-600 hover:underline text-xs font-medium">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Tambah Item Input di BAWAH
         function addInputRow() {
             const container = document.getElementById('itemContainer');
             const newRow = document.createElement('div');
@@ -174,7 +259,6 @@
             container.appendChild(newRow);
         }
 
-        // Kirim Multi Transaksi Pengeluaran
         async function submitMultiData(e) {
             e.preventDefault();
             let rows = document.querySelectorAll('.item-row');
@@ -184,11 +268,7 @@
                 let desc = row.querySelector('.desc-input').value;
                 let rawNominal = row.querySelector('.amount-input').value.replace(/[^0-9]/g, '');
                 if (desc && rawNominal) {
-                    items.push({
-                        text: desc,
-                        jenis: "Keluar",
-                        nominal: parseInt(rawNominal, 10)
-                    });
+                    items.push({ text: desc, jenis: "Keluar", nominal: parseInt(rawNominal, 10) });
                 }
             });
 
@@ -196,7 +276,6 @@
 
             let btn = document.getElementById('submitBtn');
             let msg = document.getElementById('statusMessage');
-
             btn.disabled = true;
             btn.innerText = "Menyimpan Transaksi...";
             msg.classList.remove('hidden');
@@ -208,11 +287,10 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ items: items })
+                    body: JSON.stringify({ action: "add", items: items })
                 });
 
                 setTimeout(() => {
-                    // Reset Form ke 1 Row
                     document.getElementById('itemContainer').innerHTML = `
                         <div class="item-row bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                             <input type="text" placeholder="Deskripsi (contoh: makan beli eskrim shopee)" 
@@ -229,11 +307,9 @@
                     btn.innerText = "Simpan Semua Transaksi";
                     msg.className = "text-xs text-center mt-2 text-emerald-600";
                     msg.innerText = "Berhasil disimpan!";
-                    
                     loadData();
                     setTimeout(() => msg.classList.add('hidden'), 3000);
                 }, 1500);
-
             } catch (error) {
                 btn.disabled = false;
                 btn.innerText = "Simpan Semua Transaksi";
@@ -242,15 +318,85 @@
             }
         }
 
-        // Controls Modal Saldo
+        // HAPUS TRANSAKSI
+        async function deleteData(rowIndex) {
+            if (!confirm("Apakah Anda yakin ingin menghapus catatan transaksi ini?")) return;
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "delete", rowIndex: rowIndex })
+                });
+
+                setTimeout(() => {
+                    loadData();
+                }, 1200);
+            } catch (error) {
+                alert("Gagal menghapus data.");
+            }
+        }
+
+        // EDIT TRANSAKSI
+        function openModalEdit(rowIndex, desc, nominal, jenis) {
+            document.getElementById('editRowIndex').value = rowIndex;
+            document.getElementById('editDesc').value = desc;
+            document.getElementById('editAmount').value = new Intl.NumberFormat('id-ID').format(nominal);
+            document.getElementById('editJenis').value = jenis;
+            document.getElementById('modalEdit').classList.remove('hidden');
+        }
+
+        function closeModalEdit() { document.getElementById('modalEdit').classList.add('hidden'); }
+
+        async function submitEditData() {
+            let rowIndex = document.getElementById('editRowIndex').value;
+            let desc = document.getElementById('editDesc').value;
+            let jenis = document.getElementById('editJenis').value;
+            let rawNominal = document.getElementById('editAmount').value.replace(/[^0-9]/g, '');
+
+            if (!desc || !rawNominal) return;
+
+            let btn = document.getElementById('btnEditSubmit');
+            btn.disabled = true;
+            btn.innerText = "Menyimpan...";
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "edit",
+                        rowIndex: rowIndex,
+                        text: desc,
+                        jenis: jenis,
+                        nominal: parseInt(rawNominal, 10)
+                    })
+                });
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = "Simpan Edit";
+                    closeModalEdit();
+                    loadData();
+                }, 1200);
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerText = "Simpan Edit";
+                alert("Gagal memperbarui data.");
+            }
+        }
+
+        // Controls Modal
         function openModalSaldo() { document.getElementById('modalSaldo').classList.remove('hidden'); }
         function closeModalSaldo() { document.getElementById('modalSaldo').classList.add('hidden'); }
+        function openModalRiwayat() { document.getElementById('modalRiwayat').classList.remove('hidden'); }
+        function closeModalRiwayat() { document.getElementById('modalRiwayat').classList.add('hidden'); }
 
-        // Kirim Tambah Saldo
         async function submitTambahSaldo() {
             let desc = document.getElementById('saldoDesc').value || "Tambah Saldo";
             let rawNominal = document.getElementById('saldoAmount').value.replace(/[^0-9]/g, '');
-            
             if (!rawNominal) return;
 
             let btn = document.getElementById('btnSaldoSubmit');
@@ -263,11 +409,8 @@
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        items: [{
-                            text: desc,
-                            jenis: "Masuk",
-                            nominal: parseInt(rawNominal, 10)
-                        }]
+                        action: "add",
+                        items: [{ text: desc, jenis: "Masuk", nominal: parseInt(rawNominal, 10) }]
                     })
                 });
 
@@ -278,8 +421,7 @@
                     btn.innerText = "Simpan";
                     closeModalSaldo();
                     loadData();
-                }, 1500);
-
+                }, 1200);
             } catch (error) {
                 btn.disabled = false;
                 btn.innerText = "Simpan";
