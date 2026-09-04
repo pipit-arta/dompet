@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catatan Keuangan Pribadi</title>
-    <!-- Tailwind CSS untuk styling yang rapi dan cepat -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen p-4 sm:p-6">
@@ -12,9 +11,15 @@
     <div class="max-w-md mx-auto space-y-6">
         
         <!-- Header -->
-        <header class="text-center">
-            <h1 class="text-2xl font-bold text-slate-900">Dompet Pintar 💰</h1>
-            <p class="text-sm text-slate-500">Catat pengeluaran & saldo secara praktis</p>
+        <header class="text-center flex justify-between items-center">
+            <div class="text-left">
+                <h1 class="text-2xl font-bold text-slate-900">Dompet Pintar 💰</h1>
+                <p class="text-xs text-slate-500">Catat pengeluaran & saldo secara praktis</p>
+            </div>
+            <!-- Tombol Tambah Saldo -->
+            <button onclick="openModalSaldo()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl shadow transition">
+                + Tambah Saldo
+            </button>
         </header>
 
         <!-- Kartu Ringkasan Keuangan -->
@@ -24,27 +29,42 @@
             <div class="flex justify-between border-t border-blue-500/40 pt-3 text-sm">
                 <div>
                     <span class="block text-blue-200 text-xs">Total Pemasukan</span>
-                    <span id="totalMasuk" class="font-semibold">Rp 0</span>
+                    <span id="totalMasuk" class="font-semibold text-emerald-300">Rp 0</span>
                 </div>
                 <div class="text-right">
                     <span class="block text-blue-200 text-xs">Total Pengeluaran</span>
-                    <span id="totalKeluar" class="font-semibold">Rp 0</span>
+                    <span id="totalKeluar" class="font-semibold text-rose-300">Rp 0</span>
                 </div>
             </div>
         </div>
 
-        <!-- Form Input Cepat -->
+        <!-- Form Input Transaksi Multi-Item -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-semibold text-slate-700 mb-3 text-sm">Input Transaksi Baru</h3>
-            <form id="transactionForm" onsubmit="submitData(event)" class="space-y-3">
-                <div>
-                    <input type="text" id="inputText" required
-                        placeholder="Contoh: beli sayur 15000 atau tambah saldo 5000000" 
-                        class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-semibold text-slate-700 text-sm">Catat Pengeluaran</h3>
+                <button type="button" onclick="addInputRow()" class="text-xs text-blue-600 font-semibold hover:underline">
+                    + Tambah Item
+                </button>
+            </div>
+
+            <form id="transactionForm" onsubmit="submitMultiData(event)" class="space-y-3">
+                <div id="itemContainer" class="space-y-3">
+                    <!-- Row Pertama secara default -->
+                    <div class="item-row bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                        <input type="text" placeholder="Deskripsi (contoh: makan beli eskrim shopee)" 
+                            class="desc-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                        <div class="flex gap-2">
+                            <span class="inline-flex items-center px-3 bg-slate-200 text-slate-600 rounded-lg text-sm font-medium">Rp</span>
+                            <input type="text" placeholder="Nominal (contoh: 15.000)" 
+                                oninput="formatInputRibuan(this)" 
+                                class="amount-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                        </div>
+                    </div>
                 </div>
+
                 <button type="submit" id="submitBtn"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition duration-200 text-sm shadow-md">
-                    Simpan Transaksi
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition duration-200 text-sm shadow-md mt-2">
+                    Simpan Semua Transaksi
                 </button>
             </form>
             <p id="statusMessage" class="text-xs text-center mt-2 hidden"></p>
@@ -60,28 +80,56 @@
 
     </div>
 
-    <!-- JavaScript Logika Frontend -->
+    <!-- Modal Pop-up Tambah Saldo -->
+    <div id="modalSaldo" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-xl space-y-4">
+            <h3 class="font-bold text-slate-800 text-base">Tambah Saldo / Pemasukan</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-slate-500">Keterangan</label>
+                    <input type="text" id="saldoDesc" placeholder="contoh: Gaji Bulanan / Transfer Ibu" 
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500">Nominal (Rp)</label>
+                    <input type="text" id="saldoAmount" oninput="formatInputRibuan(this)" placeholder="contoh: 5.000.000" 
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeModalSaldo()" class="w-1/2 bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-semibold">Batal</button>
+                <button onclick="submitTambahSaldo()" id="btnSaldoSubmit" class="w-1/2 bg-emerald-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-emerald-700">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // URL Web App Google Apps Script Anda
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl_2jmImcasNiYhB929cgdxiCnQCL_4qJnqg5hDjSTg252Ni5KgsJj67RV2YGXe4R-/exec";
 
-        // Format angka ke Rupiah
+        // Auto-Format Ribuan (Titik Separator)
+        function formatInputRibuan(input) {
+            let value = input.value.replace(/[^0-9]/g, '');
+            if (value) {
+                input.value = new Intl.NumberFormat('id-ID').format(value);
+            } else {
+                input.value = '';
+            }
+        }
+
         function formatRupiah(angka) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
         }
 
-        // Ambil Data saat halaman dimuat
+        // Ambil Data dari GAS
         async function loadData() {
             try {
                 let response = await fetch(SCRIPT_URL);
                 let data = await response.json();
 
-                // Update Ringkasan
                 document.getElementById('sisaSaldo').innerText = formatRupiah(data.sisaSaldo);
                 document.getElementById('totalMasuk').innerText = formatRupiah(data.totalMasuk);
                 document.getElementById('totalKeluar').innerText = formatRupiah(data.totalKeluar);
 
-                // Update Rekap Kategori
                 let catContainer = document.getElementById('categoryList');
                 catContainer.innerHTML = '';
 
@@ -107,50 +155,138 @@
             }
         }
 
-        // Kirim Data Transaksi Baru
-        async function submitData(e) {
+        // Tambah Baris Input Baru (Multi-Item)
+        function addInputRow() {
+            const container = document.getElementById('itemContainer');
+            const newRow = document.createElement('div');
+            newRow.className = "item-row bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 relative";
+            newRow.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-rose-500 text-xs font-bold px-1">✕</button>
+                <input type="text" placeholder="Deskripsi item" 
+                    class="desc-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                <div class="flex gap-2">
+                    <span class="inline-flex items-center px-3 bg-slate-200 text-slate-600 rounded-lg text-sm font-medium">Rp</span>
+                    <input type="text" placeholder="Nominal" 
+                        oninput="formatInputRibuan(this)" 
+                        class="amount-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                </div>
+            `;
+            container.appendChild(newRow);
+        }
+
+        // Kirim Multi Transaksi Pengeluaran
+        async function submitMultiData(e) {
             e.preventDefault();
-            let text = document.getElementById('inputText').value;
+            let rows = document.querySelectorAll('.item-row');
+            let items = [];
+
+            rows.forEach(row => {
+                let desc = row.querySelector('.desc-input').value;
+                let rawNominal = row.querySelector('.amount-input').value.replace(/[^0-9]/g, '');
+                if (desc && rawNominal) {
+                    items.push({
+                        text: desc,
+                        jenis: "Keluar",
+                        nominal: parseInt(rawNominal, 10)
+                    });
+                }
+            });
+
+            if (items.length === 0) return;
+
             let btn = document.getElementById('submitBtn');
             let msg = document.getElementById('statusMessage');
 
             btn.disabled = true;
-            btn.innerText = "Menyimpan & Menganalisis...";
+            btn.innerText = "Menyimpan Transaksi...";
             msg.classList.remove('hidden');
             msg.className = "text-xs text-center mt-2 text-blue-500";
-            msg.innerText = "AI sedang membaca teks...";
+            msg.innerText = "Mengirim data...";
 
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Diperlukan untuk Apps Script Web App sederhana
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
+                    body: JSON.stringify({ items: items })
                 });
 
-                // Karena mode 'no-cors', kita beri jeda sebentar lalu asumsikan berhasil
                 setTimeout(() => {
-                    document.getElementById('inputText').value = '';
+                    // Reset Form ke 1 Row
+                    document.getElementById('itemContainer').innerHTML = `
+                        <div class="item-row bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                            <input type="text" placeholder="Deskripsi (contoh: makan beli eskrim shopee)" 
+                                class="desc-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                            <div class="flex gap-2">
+                                <span class="inline-flex items-center px-3 bg-slate-200 text-slate-600 rounded-lg text-sm font-medium">Rp</span>
+                                <input type="text" placeholder="Nominal (contoh: 15.000)" 
+                                    oninput="formatInputRibuan(this)" 
+                                    class="amount-input w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                            </div>
+                        </div>
+                    `;
                     btn.disabled = false;
-                    btn.innerText = "Simpan Transaksi";
+                    btn.innerText = "Simpan Semua Transaksi";
                     msg.className = "text-xs text-center mt-2 text-emerald-600";
-                    msg.innerText = "Berhasil dicatat!";
+                    msg.innerText = "Berhasil disimpan!";
                     
-                    // Refresh data dashboard
                     loadData();
-
                     setTimeout(() => msg.classList.add('hidden'), 3000);
                 }, 1500);
 
             } catch (error) {
                 btn.disabled = false;
-                btn.innerText = "Simpan Transaksi";
+                btn.innerText = "Simpan Semua Transaksi";
                 msg.className = "text-xs text-center mt-2 text-rose-500";
                 msg.innerText = "Gagal menyimpan data.";
             }
         }
 
-        // Jalankan saat pertama buka
+        // Controls Modal Saldo
+        function openModalSaldo() { document.getElementById('modalSaldo').classList.remove('hidden'); }
+        function closeModalSaldo() { document.getElementById('modalSaldo').classList.add('hidden'); }
+
+        // Kirim Tambah Saldo
+        async function submitTambahSaldo() {
+            let desc = document.getElementById('saldoDesc').value || "Tambah Saldo";
+            let rawNominal = document.getElementById('saldoAmount').value.replace(/[^0-9]/g, '');
+            
+            if (!rawNominal) return;
+
+            let btn = document.getElementById('btnSaldoSubmit');
+            btn.disabled = true;
+            btn.innerText = "Menyimpan...";
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: [{
+                            text: desc,
+                            jenis: "Masuk",
+                            nominal: parseInt(rawNominal, 10)
+                        }]
+                    })
+                });
+
+                setTimeout(() => {
+                    document.getElementById('saldoDesc').value = '';
+                    document.getElementById('saldoAmount').value = '';
+                    btn.disabled = false;
+                    btn.innerText = "Simpan";
+                    closeModalSaldo();
+                    loadData();
+                }, 1500);
+
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerText = "Simpan";
+                alert("Gagal menambahkan saldo.");
+            }
+        }
+
         loadData();
     </script>
 </body>
