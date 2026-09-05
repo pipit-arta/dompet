@@ -173,6 +173,20 @@
         </div>
     </div>
 
+    <!-- Modal Detail Kategori -->
+<div id="modalDetailKategori" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[80vh] flex flex-col shadow-xl">
+        <div class="flex justify-between items-center mb-3 border-b pb-2">
+            <h3 id="modalKategoriTitle" class="font-bold text-slate-800 text-base">Detail Kategori</h3>
+            <button onclick="closeModalDetailKategori()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+        </div>
+        
+        <div id="detailKategoriList" class="flex-1 overflow-y-auto space-y-2 pr-1 text-sm">
+            <!-- Item detail akan disuntikkan lewat JavaScript -->
+        </div>
+    </div>
+</div>
+
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl_2jmImcasNiYhB929cgdxiCnQCL_4qJnqg5hDjSTg252Ni5KgsJj67RV2YGXe4R-/exec";
         let globalRiwayat = [];
@@ -198,15 +212,18 @@
                 catContainer.innerHTML = '<p class="text-slate-400 text-xs text-center py-2">Belum ada pengeluaran tercatat.</p>';
             } else {
                 keys.forEach(cat => {
-                    let amount = data.rekapKategori[cat];
-                    catContainer.innerHTML += `
-                        <div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-none">
-                            <span class="text-slate-600 font-medium">${cat}</span>
-                            <span class="text-slate-900 font-semibold">${formatRupiah(amount)}</span>
-                        </div>
-                    `;
-                });
-            }
+    let amount = data.rekapKategori[cat];
+    catContainer.innerHTML += `
+        <div onclick="openModalDetailKategori('${cat}')" 
+             class="flex justify-between items-center py-2.5 px-3 -mx-2 rounded-xl hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-none transition">
+            <div class="flex items-center gap-2">
+                <span class="text-slate-700 font-medium">${cat}</span>
+                <span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">Lihat detail ❯</span>
+            </div>
+            <span class="text-slate-900 font-semibold">${formatRupiah(amount)}</span>
+        </div>
+    `;
+});
 
             globalRiwayat = data.riwayat || [];
             renderRiwayat();
@@ -470,6 +487,39 @@
 
         // Jalankan pemuatan data awal
         loadData();
+
+            // --- Fungsi Modal Detail Kategori ---
+
+function openModalDetailKategori(namaKategori) {
+    document.getElementById('modalKategoriTitle').innerText = `Detail: ${namaKategori}`;
+    let container = document.getElementById('detailKategoriList');
+    container.innerHTML = '';
+
+    // Filter transaksi berdasarkan kategori yang diklik (hanya jenis Pengeluaran / Keluar)
+    let filtered = globalRiwayat.filter(item => item.kategori === namaKategori && item.jenis !== "Masuk");
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">Tidak ada rincian data.</p>';
+    } else {
+        filtered.forEach(item => {
+            container.innerHTML += `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
+                    <div>
+                        <span class="font-medium text-slate-800 block text-xs">${item.deskripsi}</span>
+                        <span class="text-[10px] text-slate-400">${item.tanggal} • ${item.metode}</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-800">${formatRupiah(item.nominal)}</span>
+                </div>
+            `;
+        });
+    }
+
+    document.getElementById('modalDetailKategori').classList.remove('hidden');
+}
+
+function closeModalDetailKategori() {
+    document.getElementById('modalDetailKategori').classList.add('hidden');
+}
     </script>
 </body>
 </html>
